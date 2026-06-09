@@ -1,21 +1,15 @@
-// ================================================================
-// FIREBASE CONFIG
-// Substitua pelos valores do seu projeto no Firebase Console:
-// https://console.firebase.google.com → Configurações do projeto
-// ================================================================
-
 import { initializeApp } from 'firebase/app'
 import { getAuth } from 'firebase/auth'
 import { getFirestore } from 'firebase/firestore'
 import { getStorage } from 'firebase/storage'
 
 const firebaseConfig = {
-  apiKey:            "SUA_API_KEY",
-  authDomain:        "SEU_PROJETO.firebaseapp.com",
-  projectId:         "SEU_PROJETO_ID",
-  storageBucket:     "SEU_PROJETO.appspot.com",
-  messagingSenderId: "SEU_SENDER_ID",
-  appId:             "SEU_APP_ID"
+  apiKey:            "AIzaSyBn8rIsANetiHx1rK2Qaoo6rrONsLcIpkc",
+  authDomain:        "ouvidoria-manager.firebaseapp.com",
+  projectId:         "ouvidoria-manager",
+  storageBucket:     "ouvidoria-manager.firebasestorage.app",
+  messagingSenderId: "194113777380",
+  appId:             "1:194113777380:web:8ca501836a96f8926606f1"
 }
 
 const app       = initializeApp(firebaseConfig)
