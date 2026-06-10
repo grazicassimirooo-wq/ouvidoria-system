@@ -30,14 +30,7 @@ export async function render(app) {
     .dash-header-brands {
       display:flex;align-items:center;gap:8px;flex-wrap:wrap;
     }
-    .dash-filters {
-      background:rgba(255,255,255,0.82);backdrop-filter:blur(12px);
-      border-radius:12px;padding:14px;
-      display:grid;grid-template-columns:1fr 1fr;gap:10px;
-      margin-bottom:18px;box-shadow:var(--shadow-sm);
-      position:relative;
-      z-index:1;
-    }
+    .dash-filters-unused { display:none; }
     .dash-filters .field-full { grid-column:1/-1; }
     .kpi-grid {
       display:grid;
@@ -140,41 +133,71 @@ export async function render(app) {
     </div>
   </div>
 
-  <!-- ===== FILTROS ===== -->
-  <div class="dash-filters glass fade-up-2">
-    <h3 style="font-size:13px;font-weight:700;color:var(--ink);display:flex;justify-content:space-between;align-items:center;" class="field-full">
-      Período <span style="color:var(--muted);font-size:11px;">☰ ⛛</span>
-    </h3>
-    <div class="field">
-      <label style="font-size:11px;">De</label>
-      <select id="df-mes-ini" style="font-size:12px;padding:7px 8px;">
-        <option value="12">Dez</option><option value="11">Nov</option>
-        <option value="10">Out</option><option value="1">Jan</option>
-        <option value="2">Fev</option>
-      </select>
-    </div>
-    <div class="field">
-      <label style="font-size:11px;">Até</label>
-      <select id="df-mes-fim" style="font-size:12px;padding:7px 8px;">
-        <option value="2">Fev</option><option value="3">Mar</option>
-        <option value="1">Jan</option><option value="12">Dez</option>
-      </select>
-    </div>
-    <div class="field field-full">
-      <label style="font-size:11px;">Analista</label>
-      <select id="df-analista" style="font-size:12px;padding:7px 8px;">
-        <option value="all">All</option>
-        <option>Giovana</option><option>Gisele</option><option>Jussara</option>
-      </select>
-    </div>
-    <div class="field field-full">
-      <label style="font-size:11px;">Ofensor Principal</label>
-      <select id="df-ofensor" style="font-size:12px;padding:7px 8px;">
-        <option value="all">All</option>
-        <option>Bloqueio/encerramento</option><option>Golpe</option>
-        <option>Invasão de conta</option><option>Emissão</option>
-        <option>Consignado</option><option>Outros</option>
-      </select>
+  <!-- ===== FILTROS RETRÁTIL ===== -->
+  <div style="margin-bottom:16px;" class="fade-up-2">
+    <button id="btn-toggle-filtros" style="
+      display:flex;align-items:center;gap:8px;
+      background:rgba(255,255,255,0.82);backdrop-filter:blur(12px);
+      border:1.5px solid rgba(11,42,85,0.12);
+      border-radius:10px;padding:10px 16px;
+      font-family:var(--font-display);font-weight:700;font-size:14px;color:var(--ink);
+      cursor:pointer;width:100%;justify-content:space-between;
+      box-shadow:var(--shadow-sm);transition:all .2s;
+    ">
+      <span style="display:flex;align-items:center;gap:8px;">
+        <span>⚙️</span> Filtros
+        <span id="filtros-badges" style="display:flex;gap:4px;"></span>
+      </span>
+      <span id="filtros-arrow" style="font-size:12px;transition:transform .25s;">▼</span>
+    </button>
+
+    <div id="filtros-panel" style="
+      display:none;
+      background:rgba(255,255,255,0.92);backdrop-filter:blur(12px);
+      border:1.5px solid rgba(255,255,255,0.9);
+      border-radius:0 0 12px 12px;
+      padding:16px;
+      box-shadow:var(--shadow-md);
+      margin-top:-2px;
+    ">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="field">
+          <label style="font-size:12px;">De</label>
+          <select id="df-mes-ini" style="font-size:13px;padding:8px 10px;">
+            <option value="12">Dez</option><option value="11">Nov</option>
+            <option value="10">Out</option><option value="1">Jan</option>
+            <option value="2">Fev</option>
+          </select>
+        </div>
+        <div class="field">
+          <label style="font-size:12px;">Até</label>
+          <select id="df-mes-fim" style="font-size:13px;padding:8px 10px;">
+            <option value="2">Fev</option><option value="3">Mar</option>
+            <option value="1">Jan</option><option value="12">Dez</option>
+          </select>
+        </div>
+        <div class="field">
+          <label style="font-size:12px;">Analista</label>
+          <select id="df-analista" style="font-size:13px;padding:8px 10px;">
+            <option value="all">Todas</option>
+            <option>Koren</option><option>Gisele</option><option>Jussara</option>
+          </select>
+        </div>
+        <div class="field">
+          <label style="font-size:12px;">Ofensor Principal</label>
+          <select id="df-ofensor" style="font-size:13px;padding:8px 10px;">
+            <option value="all">Todos</option>
+            <option>Bloqueio/encerramento</option><option>Golpe</option>
+            <option>Invasão de conta</option><option>Emissão</option>
+            <option>Consignado</option><option>Outros</option>
+          </select>
+        </div>
+        <div style="grid-column:1/-1;display:flex;justify-content:flex-end;">
+          <button id="btn-limpar-filtros-dash" class="btn btn-secondary btn-sm">
+            🧹 Limpar filtros
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -272,10 +295,33 @@ export async function render(app) {
   </div>
   `
 
-  // Filtros
+  // Toggle filtros accordion
+  const btnToggle = document.getElementById('btn-toggle-filtros')
+  const panel     = document.getElementById('filtros-panel')
+  const arrow     = document.getElementById('filtros-arrow')
+
+  btnToggle.addEventListener('click', () => {
+    const aberto = panel.style.display === 'block'
+    panel.style.display = aberto ? 'none' : 'block'
+    arrow.style.transform = aberto ? '' : 'rotate(180deg)'
+    btnToggle.style.borderRadius = aberto ? '10px' : '10px 10px 0 0'
+  })
+
+  // Limpar filtros
+  document.getElementById('btn-limpar-filtros-dash').addEventListener('click', () => {
+    document.getElementById('df-analista').value = 'all'
+    document.getElementById('df-ofensor').value  = 'all'
+    document.getElementById('df-mes-ini').value  = '12'
+    document.getElementById('df-mes-fim').value  = '2'
+    document.getElementById('filtros-badges').innerHTML = ''
+    if (window.__dashData) updateDashboard(window.__dashData)
+  })
+
+  // Filtros — atualiza badges ao mudar
   ;['df-mes-ini','df-mes-fim','df-analista','df-ofensor'].forEach(id => {
     document.getElementById(id)?.addEventListener('change', () => {
       if (window.__dashData) updateDashboard(window.__dashData)
+      atualizarBadgesFiltros()
     })
   })
 
@@ -291,6 +337,23 @@ export async function render(app) {
     state.unsubs.push(unsubDash)
     updateDashboard(casos)
   })
+}
+
+function atualizarBadgesFiltros() {
+  const badges = document.getElementById('filtros-badges')
+  if (!badges) return
+  const analista = document.getElementById('df-analista')?.value
+  const ofensor  = document.getElementById('df-ofensor')?.value
+  const items = []
+  if (analista && analista !== 'all') items.push(analista)
+  if (ofensor  && ofensor  !== 'all') items.push(ofensor.split('/')[0])
+  badges.innerHTML = items.map(i => `
+    <span style="
+      background:var(--yellow);color:var(--ink);
+      border-radius:999px;padding:1px 8px;
+      font-size:11px;font-weight:700;
+    ">${i}</span>
+  `).join('')
 }
 
 function getFilters() {
