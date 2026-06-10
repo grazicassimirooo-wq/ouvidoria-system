@@ -133,12 +133,18 @@ export async function render(app) {
             <label>Data Resposta</label>
             <input type="date" id="f-data-resp" placeholder="Deixe vazio se pendente">
           </div>
-          <div class="field">
+          <div class="field" style="grid-column:1/-1;">
             <label>Ofensor Principal *</label>
             <select id="f-ofensor-form" required>
               <option value="">Selecione</option>
               ${OFENSORES.map(o => `<option value="${o}">${o}</option>`).join('')}
+              <option value="__outro__">✏️ Outro (especificar)</option>
             </select>
+          </div>
+          <div class="field" id="campo-outro-wrap" style="grid-column:1/-1;display:none;">
+            <label>Especifique o assunto *</label>
+            <input type="text" id="f-ofensor-outro" placeholder="Descreva o assunto do caso..." maxlength="80">
+            <span style="font-size:11px;color:var(--muted);margin-top:3px;">Este assunto aparecerá no dashboard como novo ofensor.</span>
           </div>
           <div class="field">
             <label>Status Resolução *</label>
@@ -211,6 +217,21 @@ function bindEvents() {
     if (e.target.id === 'modal-caso') closeModal()
   })
 
+  // Toggle campo "Outro"
+  document.getElementById('f-ofensor-form').addEventListener('change', function() {
+    const wrap = document.getElementById('campo-outro-wrap')
+    const input = document.getElementById('f-ofensor-outro')
+    if (this.value === '__outro__') {
+      wrap.style.display = 'block'
+      input.required = true
+      input.focus()
+    } else {
+      wrap.style.display = 'none'
+      input.required = false
+      input.value = ''
+    }
+  })
+
   // Salvar
   document.getElementById('form-caso').addEventListener('submit', handleSave)
 
@@ -252,6 +273,15 @@ function getFilters() {
 
 function renderTable() {
   const f = getFilters()
+
+  // Atualiza select de ofensores com valores customizados presentes nos casos
+  const selectOfensor = document.getElementById('f-ofensor')
+  if (selectOfensor) {
+    const ofensoresUnicos = [...new Set(allCasos.map(c => c.ofensorPrincipal).filter(Boolean))]
+    const valorAtual = selectOfensor.value
+    selectOfensor.innerHTML = `<option value="all">Todos</option>` +
+      ofensoresUnicos.map(o => `<option value="${o}" ${valorAtual===o?'selected':''}>${o}</option>`).join('')
+  }
   const filtered = allCasos.filter(c => {
     if (f.analista !== 'all' && c.analista !== f.analista) return false
     if (f.status   !== 'all' && c.statusResolucao !== f.status) return false
@@ -313,7 +343,19 @@ function openModal(data = null) {
   document.getElementById('f-analista-form').value = data?.analista || ''
   document.getElementById('f-data-rec').value      = fmtDateInput(data?.dataRecebimento) || ''
   document.getElementById('f-data-resp').value     = fmtDateInput(data?.dataResposta) || ''
-  document.getElementById('f-ofensor-form').value  = data?.ofensorPrincipal || ''
+  const isOutro = data?.ofensorPrincipal && !OFENSORES.includes(data.ofensorPrincipal)
+  document.getElementById('f-ofensor-form').value  = isOutro ? '__outro__' : (data?.ofensorPrincipal || '')
+  const campoOutroWrap = document.getElementById('campo-outro-wrap')
+  const campoOutroInput = document.getElementById('f-ofensor-outro')
+  if (isOutro) {
+    campoOutroWrap.style.display = 'block'
+    campoOutroInput.value = data.ofensorPrincipal
+    campoOutroInput.required = true
+  } else {
+    campoOutroWrap.style.display = 'none'
+    campoOutroInput.value = ''
+    campoOutroInput.required = false
+  }
   document.getElementById('f-status-form').value   = data?.statusResolucao || ''
   document.getElementById('f-nota').value           = data?.notaCSAT || ''
   document.getElementById('f-fcr').value            = data?.acordoFCR || 'Não'
@@ -354,6 +396,11 @@ async function handleSave(e) {
   const btnSpin = document.getElementById('btn-salvar-spin')
   errEl.style.display = 'none'
 
+  const selectOfensor = document.getElementById('f-ofensor-form').value
+  const ofensorFinal = selectOfensor === '__outro__'
+    ? document.getElementById('f-ofensor-outro').value.trim()
+    : selectOfensor
+
   const dataRec  = parseDate(document.getElementById('f-data-rec').value)
   const dataResp = document.getElementById('f-data-resp').value
     ? parseDate(document.getElementById('f-data-resp').value)
@@ -364,7 +411,7 @@ async function handleSave(e) {
     analista:         document.getElementById('f-analista-form').value,
     dataRecebimento:  dataRec,
     dataResposta:     dataResp,
-    ofensorPrincipal: document.getElementById('f-ofensor-form').value,
+    ofensorPrincipal: ofensorFinal,
     statusResolucao:  document.getElementById('f-status-form').value,
     notaCSAT:         document.getElementById('f-nota').value
                         ? Number(document.getElementById('f-nota').value)
