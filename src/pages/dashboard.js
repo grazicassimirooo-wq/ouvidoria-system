@@ -519,7 +519,7 @@ function renderLineChart(data){
   if(charts.line) charts.line.destroy()
   if(!data.length) return
   const labels=data.map(d=>d.semana)
-  const analistas=['Giovana','Gisele','Jussara']
+  const analistas=['Koren','Gisele','Jussara']
   const COLORS=['#2EAA4E','#F5C518','#DC3F3F']
   charts.line=new Chart(ctx,{
     type:'line',

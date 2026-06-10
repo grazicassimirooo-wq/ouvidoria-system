@@ -39,7 +39,7 @@ export const calcPrazo = (recebimento, resposta) => {
 export const semanaLabel = (n) => `Semana ${n}`
 
 // ── Listas de opções
-export const ANALISTAS   = ['Giovana', 'Gisele', 'Jussara']
+export const ANALISTAS   = ['Koren', 'Gisele', 'Jussara']
 export const OFENSORES   = [
   'Bloqueio/encerramento',
   'Golpe',
