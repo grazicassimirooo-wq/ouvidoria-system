@@ -17,10 +17,43 @@ export async function render(app) {
 
   main.innerHTML = `
     <div class="fade-up-1" style="margin-bottom:28px;">
-      <h2 style="font-family:var(--font-display);font-weight:800;font-size:26px;color:var(--ink);margin-bottom:4px;">
-        📥 Importar Planilha
-      </h2>
-      <p style="font-size:14px;color:var(--muted);">Suba a planilha de alimentação (.xlsx) para importar os casos para o banco de dados.</p>
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:14px;">
+        <div>
+          <h2 style="font-family:var(--font-display);font-weight:800;font-size:26px;color:var(--ink);margin-bottom:4px;">
+            📥 Importar Planilha
+          </h2>
+          <p style="font-size:14px;color:var(--muted);">Suba a planilha de alimentação (.xlsx) para importar os casos para o banco de dados.</p>
+        </div>
+        <button id="btn-baixar-modelo" class="btn btn-primary" style="flex-shrink:0;">
+          📋 Baixar Modelo de Planilha
+        </button>
+      </div>
+    </div>
+
+    <!-- Card modelo -->
+    <div class="glass fade-up-2" style="
+      border-radius:var(--radius-md);padding:16px 20px;
+      margin-bottom:20px;
+      background:rgba(245,197,24,0.08);
+      border:1.5px solid rgba(245,197,24,0.3);
+      display:flex;align-items:center;gap:16px;flex-wrap:wrap;
+    ">
+      <div style="font-size:36px;">📊</div>
+      <div style="flex:1;min-width:200px;">
+        <div style="font-family:var(--font-display);font-weight:700;font-size:15px;color:var(--ink);margin-bottom:4px;">
+          Modelo de Planilha — Ouvidoria
+        </div>
+        <div style="font-size:13px;color:var(--muted);line-height:1.5;">
+          Baixe o modelo, preencha a aba <strong>"Casos"</strong> com os dados e faça o upload abaixo.<br>
+          Colunas obrigatórias: <strong>ID Caso, Data Recebimento, Analista, Ofensor Principal, Status Resolução.</strong>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;text-align:center;">
+        <button id="btn-baixar-modelo-2" class="btn btn-primary btn-sm">
+          ⬇️ Baixar .xlsx
+        </button>
+        <span style="font-size:11px;color:var(--muted);">Inclui 3 linhas de exemplo</span>
+      </div>
     </div>
 
     <!-- Instruções -->
@@ -116,6 +149,81 @@ export async function render(app) {
   `
 
   let parsedCasos = []
+
+  // ── Gerar modelo de planilha
+  function gerarModelo() {
+    const XLSX = window.XLSX
+    if (!XLSX) { showToast('Aguarde o carregamento da biblioteca...', 'info'); return }
+
+    const colunas = [
+      'ID Caso', 'Data Recebimento', 'Data Resposta',
+      'Analista', 'Ofensor Principal', 'Status Resolução',
+      'Nota CSAT (1-5)', 'Acordo FCR'
+    ]
+
+    const exemplos = [
+      {
+        'ID Caso': 'CG-2025-001',
+        'Data Recebimento': '01/12/2025',
+        'Data Resposta': '05/12/2025',
+        'Analista': 'Koren',
+        'Ofensor Principal': 'Bloqueio/encerramento',
+        'Status Resolução': 'Resolvido',
+        'Nota CSAT (1-5)': 4.5,
+        'Acordo FCR': 'Sim'
+      },
+      {
+        'ID Caso': 'CG-2025-002',
+        'Data Recebimento': '03/12/2025',
+        'Data Resposta': '08/12/2025',
+        'Analista': 'Gisele',
+        'Ofensor Principal': 'Golpe',
+        'Status Resolução': 'Improcedente',
+        'Nota CSAT (1-5)': 3.0,
+        'Acordo FCR': 'Não'
+      },
+      {
+        'ID Caso': 'CG-2025-003',
+        'Data Recebimento': '10/12/2025',
+        'Data Resposta': '',
+        'Analista': 'Jussara',
+        'Ofensor Principal': 'Invasão de conta',
+        'Status Resolução': 'Em Andamento',
+        'Nota CSAT (1-5)': '',
+        'Acordo FCR': 'Não'
+      }
+    ]
+
+    const ws = XLSX.utils.json_to_sheet(exemplos, { header: colunas })
+
+    // Largura das colunas
+    ws['!cols'] = [
+      {wch:16},{wch:18},{wch:16},{wch:14},{wch:26},
+      {wch:22},{wch:16},{wch:12}
+    ]
+
+    // Aba de referência com valores válidos
+    const wsRef = XLSX.utils.aoa_to_sheet([
+      ['Analistas válidos', 'Ofensores válidos', 'Status válidos', 'FCR válido'],
+      ['Koren',   'Bloqueio/encerramento', 'Resolvido',           'Sim'],
+      ['Gisele',  'Golpe',                 'Improcedente',        'Não'],
+      ['Jussara', 'Invasão de conta',      'Cancelada/Recusada',  ''],
+      ['',        'Emissão',               'Em Andamento',        ''],
+      ['',        'Consignado',            '',                    ''],
+      ['',        'Outros',                '',                    ''],
+      ['',        '(ou texto livre)',       '',                    ''],
+    ])
+    wsRef['!cols'] = [{wch:18},{wch:24},{wch:22},{wch:12}]
+
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, 'Casos')
+    XLSX.utils.book_append_sheet(wb, wsRef, 'Valores Válidos')
+    XLSX.writeFile(wb, 'modelo_ouvidoria.xlsx')
+    showToast('Modelo baixado! Preencha a aba "Casos" e importe aqui.', 'success')
+  }
+
+  document.getElementById('btn-baixar-modelo').addEventListener('click', gerarModelo)
+  document.getElementById('btn-baixar-modelo-2').addEventListener('click', gerarModelo)
 
   const dropZone  = document.getElementById('drop-zone')
   const fileInput = document.getElementById('file-input')
