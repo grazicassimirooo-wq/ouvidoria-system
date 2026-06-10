@@ -123,8 +123,26 @@ export const importCasosLote = async (rows) => {
 }
 
 // ──────────────────────────────────────────
-// STORAGE — upload de planilhas
+// BACKLOG (documento único "atual")
 // ──────────────────────────────────────────
+export const getBacklog = async () => {
+  const snap = await getDoc(doc(db, 'backlog', 'atual'))
+  return snap.exists() ? snap.data() : null
+}
+
+export const updateBacklog = (data) => {
+  return import('firebase/firestore').then(({ setDoc }) =>
+    setDoc(doc(db, 'backlog', 'atual'), {
+      ...data,
+      atualizadoEm: serverTimestamp()
+    }, { merge: true })
+  )
+}
+
+export const onBacklog = (cb) =>
+  onSnapshot(doc(db, 'backlog', 'atual'), snap => {
+    cb(snap.exists() ? snap.data() : null)
+  })
 
 export const uploadPlanilha = async (file) => {
   const storageRef = ref(storage, `planilhas/${Date.now()}_${file.name}`)

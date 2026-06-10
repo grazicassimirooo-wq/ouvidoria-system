@@ -3,7 +3,7 @@
 // ================================================================
 
 import { renderNavbar } from '../components/navbar.js'
-import { onCasos } from '../firebase/service.js'
+import { onCasos, onBacklog } from '../firebase/service.js'
 import { state } from '../main.js'
 import {
   calcKPIs, calcPorAnalista, calcPorOfensor, calcPorStatus,
@@ -204,6 +204,119 @@ export async function render(app) {
   <!-- ===== KPIs ===== -->
   <section id="kpi-section" class="kpi-grid fade-up-2"></section>
 
+  <!-- ===== CARD BACKLOG ===== -->
+  <div id="backlog-section" class="glass fade-up-3" style="
+    border-radius:var(--radius-md);
+    margin-bottom:18px;
+    overflow:hidden;
+    box-shadow:var(--shadow-md);
+  ">
+    <!-- Header clicável -->
+    <div id="backlog-header" style="
+      background:linear-gradient(135deg,var(--ink) 0%,#1B3A6B 100%);
+      padding:14px 20px;
+      display:flex;align-items:center;justify-content:space-between;
+      cursor:pointer;
+    ">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:20px;">📋</span>
+        <div>
+          <div style="font-family:var(--font-display);font-weight:800;font-size:15px;color:white;">
+            Situação do Backlog — Consumidor.gov
+          </div>
+          <div id="backlog-updated" style="font-size:11px;color:rgba(255,255,255,0.6);margin-top:2px;">
+            Carregando...
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;">
+        <button id="btn-editar-backlog" class="btn btn-sm" style="
+          background:rgba(255,255,255,0.15);
+          border:1px solid rgba(255,255,255,0.3);
+          color:white;font-size:12px;
+        ">✏️ Editar</button>
+        <span id="backlog-arrow" style="color:white;font-size:12px;transition:transform .25s;">▼</span>
+      </div>
+    </div>
+
+    <!-- Corpo do card -->
+    <div id="backlog-body" style="padding:16px 20px;">
+      <div id="backlog-cards" style="
+        display:grid;
+        grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+        gap:12px;
+        margin-bottom:14px;
+      ">
+        <div class="spinner" style="margin:20px auto;grid-column:1/-1;"></div>
+      </div>
+
+      <!-- Barra de progresso -->
+      <div id="backlog-progress" style="display:none;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <span style="font-size:12px;font-weight:700;color:var(--ink);">Progresso de Subida no Sistema</span>
+          <span id="backlog-pct-txt" style="font-size:13px;font-weight:800;color:var(--green);"></span>
+        </div>
+        <div style="height:12px;background:rgba(11,42,85,0.08);border-radius:999px;overflow:hidden;">
+          <div id="backlog-bar" style="
+            height:100%;border-radius:999px;
+            background:linear-gradient(90deg,var(--green),#4ADE80);
+            transition:width .8s ease;
+            width:0%;
+          "></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:4px;font-size:11px;color:var(--muted);">
+          <span id="backlog-subidos-txt"></span>
+          <span id="backlog-total-txt"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal editar backlog -->
+  <div id="modal-backlog" class="modal-overlay" style="display:none;">
+    <div class="modal" style="max-width:480px;">
+      <div class="modal-header">
+        <span class="modal-title">📋 Atualizar Situação do Backlog</span>
+        <button class="modal-close" id="close-backlog-modal">✕</button>
+      </div>
+      <form id="form-backlog" style="display:flex;flex-direction:column;gap:14px;">
+        <div style="
+          background:var(--sand-light);border-radius:8px;
+          padding:10px 14px;font-size:13px;color:var(--ink-soft);
+        ">
+          💡 Atualize os números conforme a realidade do dia.
+          Os valores refletem instantaneamente no dashboard.
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div class="field">
+            <label>Total no Backlog</label>
+            <input type="number" id="bl-total" min="0" placeholder="ex: 485" required>
+          </div>
+          <div class="field">
+            <label>Subidos no Sistema</label>
+            <input type="number" id="bl-subidos" min="0" placeholder="ex: 80" required>
+          </div>
+          <div class="field">
+            <label>Pendente — Analista Responder</label>
+            <input type="number" id="bl-analista" min="0" placeholder="ex: 250" required>
+          </div>
+          <div class="field">
+            <label>Pendente — Área</label>
+            <input type="number" id="bl-area" min="0" placeholder="ex: 155" required>
+          </div>
+        </div>
+        <div id="backlog-form-error" style="display:none;background:var(--red-light);color:#7F1D1D;border-radius:8px;padding:10px 14px;font-size:13px;font-weight:600;"></div>
+        <div style="display:flex;gap:10px;justify-content:flex-end;">
+          <button type="button" id="cancel-backlog-modal" class="btn btn-secondary">Cancelar</button>
+          <button type="submit" id="btn-salvar-backlog" class="btn btn-primary">
+            <span id="bl-btn-txt">💾 Salvar</span>
+            <div class="spinner" id="bl-spin" style="display:none;width:16px;height:16px;border-width:2px;"></div>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- ===== TABELA + VISÃO ESTRATÉGICA ===== -->
   <div class="section-row">
 
@@ -331,7 +444,31 @@ export async function render(app) {
     showToast('Exportando planilha...', 'info')
   })
 
-  // Listener em tempo real
+  // Modal editar backlog
+  document.getElementById('btn-editar-backlog').addEventListener('click', (e) => {
+    e.stopPropagation()
+    openBacklogModal()
+  })
+  document.getElementById('backlog-header').addEventListener('click', () => {
+    const body  = document.getElementById('backlog-body')
+    const arrow = document.getElementById('backlog-arrow')
+    const aberto = body.style.display !== 'none'
+    body.style.display = aberto ? 'none' : 'block'
+    arrow.style.transform = aberto ? 'rotate(-90deg)' : ''
+  })
+  document.getElementById('close-backlog-modal').addEventListener('click', () => {
+    document.getElementById('modal-backlog').style.display = 'none'
+  })
+  document.getElementById('cancel-backlog-modal').addEventListener('click', () => {
+    document.getElementById('modal-backlog').style.display = 'none'
+  })
+  document.getElementById('form-backlog').addEventListener('submit', saveBacklog)
+
+  // Listener backlog tempo real
+  const unsubBL = onBacklog((data) => renderBacklog(data))
+  state.unsubs.push(unsubBL)
+
+  // Listener casos tempo real
   unsubDash = onCasos((casos) => {
     window.__dashData = casos
     state.unsubs.push(unsubDash)
@@ -612,4 +749,116 @@ function renderLineChart(data){
       }
     }
   })
+}
+
+// ── BACKLOG ──
+function renderBacklog(data) {
+  const cards  = document.getElementById('backlog-cards')
+  const prog   = document.getElementById('backlog-progress')
+  const upd    = document.getElementById('backlog-updated')
+  if (!cards) return
+
+  if (!data) {
+    cards.innerHTML = `
+      <div style="grid-column:1/-1;text-align:center;padding:20px;">
+        <p style="color:var(--muted);font-size:14px;margin-bottom:12px;">
+          Nenhum dado de backlog cadastrado ainda.
+        </p>
+        <button class="btn btn-primary btn-sm" onclick="document.getElementById('btn-editar-backlog').click()">
+          + Cadastrar agora
+        </button>
+      </div>`
+    return
+  }
+
+  const total    = data.total    || 0
+  const subidos  = data.subidos  || 0
+  const analista = data.pendenteAnalista || 0
+  const area     = data.pendenteArea     || 0
+  const restante = total - subidos
+  const pct      = total ? Math.round(subidos / total * 100) : 0
+
+  // Atualizado em
+  if (data.atualizadoEm?.toDate) {
+    upd.textContent = `Atualizado em ${data.atualizadoEm.toDate().toLocaleDateString('pt-BR')} às ${data.atualizadoEm.toDate().toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'})}`
+  }
+
+  const itens = [
+    { icon:'📦', label:'Total Backlog',              value: total,    bg:'rgba(11,42,85,0.06)',   color:'var(--ink)' },
+    { icon:'✅', label:'Subidos no Sistema',         value: subidos,  bg:'var(--green-light)',    color:'#14532D'    },
+    { icon:'⏳', label:'Pendente — Analista',        value: analista, bg:'#FEF3C7',               color:'#78350F'    },
+    { icon:'🏢', label:'Pendente — Área',            value: area,     bg:'var(--red-light)',      color:'#7F1D1D'    },
+    { icon:'📋', label:'Restante a Subir',           value: restante, bg:'var(--blue-light)',     color:'#1E3A8A'    },
+  ]
+
+  cards.innerHTML = itens.map(it => `
+    <div style="
+      background:${it.bg};border-radius:10px;padding:14px 16px;
+      border:1px solid rgba(11,42,85,0.08);
+      transition:transform .2s;
+    "
+    onmouseover="this.style.transform='translateY(-2px)'"
+    onmouseout="this.style.transform=''"
+    >
+      <div style="font-size:20px;margin-bottom:6px;">${it.icon}</div>
+      <div style="font-family:var(--font-display);font-weight:800;font-size:24px;color:${it.color};line-height:1;">${it.value}</div>
+      <div style="font-size:12px;font-weight:600;color:${it.color};opacity:.8;margin-top:4px;">${it.label}</div>
+    </div>
+  `).join('')
+
+  // Barra de progresso
+  if (prog) {
+    prog.style.display = 'block'
+    document.getElementById('backlog-bar').style.width = pct + '%'
+    document.getElementById('backlog-pct-txt').textContent = pct + '%'
+    document.getElementById('backlog-subidos-txt').textContent = `${subidos} subidos`
+    document.getElementById('backlog-total-txt').textContent   = `${total} total`
+  }
+}
+
+function openBacklogModal() {
+  const modal = document.getElementById('modal-backlog')
+  // Preenche com valores atuais se existir
+  if (window.__backlogData) {
+    document.getElementById('bl-total').value    = window.__backlogData.total    || ''
+    document.getElementById('bl-subidos').value  = window.__backlogData.subidos  || ''
+    document.getElementById('bl-analista').value = window.__backlogData.pendenteAnalista || ''
+    document.getElementById('bl-area').value     = window.__backlogData.pendenteArea     || ''
+  }
+  modal.style.display = 'flex'
+}
+
+async function saveBacklog(e) {
+  e.preventDefault()
+  const errEl = document.getElementById('backlog-form-error')
+  const btn   = document.getElementById('btn-salvar-backlog')
+  const txt   = document.getElementById('bl-btn-txt')
+  const spin  = document.getElementById('bl-spin')
+  errEl.style.display = 'none'
+
+  const payload = {
+    total:              Number(document.getElementById('bl-total').value),
+    subidos:            Number(document.getElementById('bl-subidos').value),
+    pendenteAnalista:   Number(document.getElementById('bl-analista').value),
+    pendenteArea:       Number(document.getElementById('bl-area').value),
+  }
+
+  btn.disabled = true
+  txt.textContent = 'Salvando...'
+  spin.style.display = 'inline-block'
+
+  try {
+    const { updateBacklog } = await import('../firebase/service.js')
+    await updateBacklog(payload)
+    window.__backlogData = payload
+    document.getElementById('modal-backlog').style.display = 'none'
+    showToast('Backlog atualizado! ✅', 'success')
+  } catch(err) {
+    errEl.textContent = 'Erro ao salvar: ' + err.message
+    errEl.style.display = 'block'
+  } finally {
+    btn.disabled = false
+    txt.textContent = '💾 Salvar'
+    spin.style.display = 'none'
+  }
 }
