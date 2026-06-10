@@ -35,6 +35,8 @@ export async function render(app) {
       border-radius:12px;padding:14px;
       display:grid;grid-template-columns:1fr 1fr;gap:10px;
       margin-bottom:18px;box-shadow:var(--shadow-sm);
+      position:relative;
+      z-index:1;
     }
     .dash-filters .field-full { grid-column:1/-1; }
     .kpi-grid {
@@ -65,6 +67,7 @@ export async function render(app) {
         display:flex;flex-direction:column;gap:10px;
         grid-template-columns:unset;
         margin-bottom:0;
+        z-index:10;
       }
       .dash-filters .field-full { grid-column:unset; }
       .kpi-grid {
